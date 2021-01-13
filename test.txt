@@ -1,0 +1,981 @@
+var GAMESTATE = "start";
+
+var button = createSprite(200,300,20,20);
+
+var thief = createSprite(20,380,10,10);
+//thief.setAnimation("thiefImage");
+//thief.scale=0.3;
+thief.shapeColor="black";
+
+var diamond = createSprite(382,21,30,30);
+diamond.setAnimation("diamond");
+diamond.scale=0.2;
+diamond.shapeColor="silver";
+
+thief.visible=false;
+diamond.visible=false;
+
+ var wallGroup=createGroup();
+ 
+ var PLAY = 1;
+var END = 0;
+var gameState = PLAY;
+ 
+ //create a trex sprite
+var player = createSprite(200,380,20,50);
+
+player.setAnimation("BoyImage.png_1");
+//trex.setAnimation("trex");
+player.visible=false;
+//set collision radius for the trex
+player.setCollider("circle",0,0,30);
+
+//scale and position the trex
+player.scale = 0.5;
+player.x = 50;
+
+//create a ground sprite
+var ground = createSprite(200,380,400,20);
+//ground.setAnimation("ground2");
+ground.x = ground.width /2;
+ground.visible=false;
+//invisible Ground to support Trex
+var invisibleGround = createSprite(200,385,400,5);
+invisibleGround.visible = false;
+
+//create Obstacle and Cloud Groups
+var ObstaclesGroup = createGroup();
+var CloudsGroup = createGroup();
+
+//press restart vars
+var restart=createSprite(200,340);
+var gameover=createSprite(200,300);
+//gameover.setAnimation("gameOver");
+gameover.scale=0.5;
+//restart.setAnimation("restart");
+restart.scale=0.5;
+
+gameover.visible=false;
+restart.visible=false;
+
+//set text
+textSize(18);
+textFont("Georgia");
+textStyle(BOLD);
+
+//score
+var count = 0;
+
+// happy people jumping in jouy variables
+
+var velocity = -10;
+
+var count1 = 0;
+var count2 = 0;
+var count3 = 0;
+var count4 = 0;
+
+// Create the first sprite and setAnimation to the sprite
+var ball1 = createSprite(75,345,47,47);
+//ball1.setAnimation("blue_ball");
+var gravity1 = 1.5;
+ball1.scale=0.3;
+ball1.visible=false;
+// Create the second sprite and setAnimation to the sprite
+var ball2 = createSprite(150,345,47,47);
+//ball2.setAnimation("green_ball");
+var gravity2 = 1;
+ball2.scale=0.3;
+ball2.visible=false;
+// Create the third sprite and setAnimation to the sprite
+var ball3 = createSprite(225,345,47,47);
+//ball3.setAnimation("silver_ball");
+var gravity3 = 0.5;
+ball1.velocityY = ball1.velocityY + gravity1;
+ball3.scale=0.3;
+ball3.visible=false;
+
+// Create the fourth sprite and setAnimation to the sprite
+var ball4 = createSprite(300,345,47,47);
+//ball4.setAnimation("bronze_ball");
+var gravity4 = 0.2;
+ball4.scale=0.3;
+ball4.visible=false;
+
+  
+
+function draw() {
+  
+  background("lightblue");
+  
+  createEdgeSprites();
+  
+  if( GAMESTATE === "start"){
+    text ("hii",200,200,50,50);
+    stroke("red");
+    wallGroup.setVisibleEach(false);
+    if(mousePressedOver(button)){
+      GAMESTATE = "play";
+    }
+  
+  }
+   if(GAMESTATE==="play"){
+     background("pink");
+     walls();
+     wallGroup.setVisibleEach(true);
+     button.visible=false;
+     thief.visible=true;
+    diamond.visible=true;
+
+
+    if (keyDown("RIGHT_ARROW")) {
+thief.setVelocity(5,0);
+        
+  }
+    
+if (keyDown("LEFT_ARROW")) {
+thief.setVelocity(-5,0);
+        
+  }  
+  
+  
+  if (keyDown("DOWN_ARROW")) {
+thief.setVelocity(0,5);
+        
+  }
+  
+ if (keyDown("UP_ARROW")) {
+thief.setVelocity(0,-5);
+        
+  } 
+  if(thief.isTouching(diamond)){
+      GAMESTATE="playing";
+    }
+   }
+  if(GAMESTATE==="playing"){
+    background("lightblue");
+    wallGroup.setVisibleEach(false);
+    diamond.visible=false;
+    thief.visible=false;
+    
+
+//infinte runner game
+player.visible=true;
+ground.visible=true;
+
+text("Score: "+ count, 250, 100);
+  //console.log(gameState);
+  
+  if(gameState === PLAY){
+    //move the ground
+    ground.velocityX = -(6 + 3*count/100);
+    //scoring
+    count = count+ Math.round(World.frameRate/60);
+    
+   /* if (count>0 && count%100 === 0){
+      playSound("checkPoint.mp3");
+    }*/
+    
+    if (ground.x < 0){
+      ground.x = ground.width/2;
+    }
+    
+     //jump when the space key is pressed
+    if(keyDown("space") && player.y >= 359){
+      player.velocityY = -12 ;
+     // playSound("jump.mp3");
+    }
+  
+    //add gravity
+    player.velocityY = player.velocityY + 0.8;
+    
+    //spawn the clouds
+    spawnClouds();
+  
+    //spawn obstacles
+    spawnObstacles();
+    
+    //End the game when player is touching the obstacle
+    if(ObstaclesGroup.isTouching(player)){
+      gameState = END;
+      //playSound("die.mp3");
+    }
+  }
+  
+  else if(gameState === END) {
+    
+    gameover.visible=true;
+    restart.visible=true;
+    
+    //set velcity of each game object to 0
+    ground.velocityX = 0;
+    player.velocityY = 0;
+    ObstaclesGroup.setVelocityXEach(0);
+    CloudsGroup.setVelocityXEach(0);
+    
+    //change the player animation
+   // player.setAnimation("trex_collided");
+    
+    //set lifetime of the game objects so that they are never destroyed
+    ObstaclesGroup.setLifetimeEach(-1);
+    CloudsGroup.setLifetimeEach(-1);
+    
+   
+  }
+  
+  if(mousePressedOver(restart)){
+    reset();
+  }
+  //console.log(trex.y);
+  
+  //stop trex from falling down
+  player.collide(invisibleGround);
+  
+  if(count===40){
+    GAMESTATE="happy";
+  }
+    
+  }
+
+  if(GAMESTATE==="happy"){
+   // background("yellow");
+    player.visible=false;
+    ground.visible=false;
+    ground.velocityX=0;
+    CloudsGroup.destroyEach();
+    
+    
+    ball1.visible=true;
+    ball2.visible=true;
+    ball3.visible=true;
+    ball4.visible=true;
+    
+    createEdgeSprites();
+  fill("cyan");
+  textSize(40);
+  text(count1,50,45);
+  text(count2,125,45);
+  text(count3,200,45);
+  text(count4,275,45);
+  
+  ball1.velocityY = ball1.velocityY + gravity1;
+  ball2.velocityY = ball2.velocityY + gravity2;
+  ball3.velocityY = ball3.velocityY + gravity3;
+  ball4.velocityY = ball4.velocityY + gravity4;
+   
+  if (ball1.isTouching(bottomEdge)){
+    ball1.velocityY = velocity;
+    count1 = count1 + 1;
+  } 
+  if (ball2.isTouching(bottomEdge)){
+    ball2.velocityY = velocity;
+    count2 = count2 + 1;
+  } 
+  if (ball3.isTouching(bottomEdge)){
+    ball3.velocityY = velocity;
+    count3 = count3 + 1;
+  } 
+  if (ball4.isTouching(bottomEdge)){
+    ball4.velocityY = velocity;
+    count4 = count4 + 1;
+  }
+  }
+  drawSprites();
+  
+}
+
+function reset(){
+  gameState=PLAY;
+  
+  gameover.visible=false;
+  restart.visible=false;
+  
+  ObstaclesGroup.destroyEach();
+  CloudsGroup.destroyEach();
+  
+  //trex.setAnimation("trex");
+  count=0;
+  
+}
+function spawnObstacles() {
+  if(World.frameCount % 60 === 0) {
+    var obstacle = createSprite(400,365,10,40);
+    obstacle.velocityX = - (6 + 3*count/100);
+    
+    //generate random obstacles
+    var rand = randomNumber(1,6);
+    //obstacle.setAnimation("obstacle" + rand);
+    
+    //assign scale and lifetime to the obstacle           
+    obstacle.scale = 0.5;
+    obstacle.lifetime = 70;
+    //add each obstacle to the group
+    ObstaclesGroup.add(obstacle);
+  }
+}
+
+function spawnClouds() {
+  //write code here to spawn the clouds
+  if (World.frameCount % 60 === 0) {
+    var cloud = createSprite(400,320,40,10);
+    cloud.y = randomNumber(280,320);
+    //cloud.setAnimation("cloud");
+    cloud.scale = 0.5;
+    cloud.velocityX = -3;
+    
+     //assign lifetime to the variable
+    cloud.lifetime = 134;
+    
+    //adjust the depth
+    cloud.depth = player.depth;
+    player.depth = player.depth + 1;
+    
+    //add each cloud to the group
+    CloudsGroup.add(cloud);
+  }
+  
+}
+  
+
+  
+  drawSprites();
+  
+function walls(){
+  var wall1 = createSprite(75,373,5,70);
+wall1.shapeColor="brown";
+
+var wall2 = createSprite(140,392,5,35);
+wall2.shapeColor="brown";
+
+
+var wall3 = createSprite(185,399,5,90);
+wall3.shapeColor="brown";
+
+var wall4 = createSprite(250,399,5,90);
+wall4.shapeColor="brown";
+
+var wall5 = createSprite(364,392,5,35);
+wall5.shapeColor="brown";
+
+var wall6 = createSprite(273,352,50,5);
+wall6.shapeColor="brown";
+
+
+var wall7 = createSprite(335,374,60,5);
+wall7.shapeColor="brown";
+
+
+var wall8 = createSprite(305,350,5,50);
+wall8.shapeColor="brown";
+
+var wall9 = createSprite(271,330,5,40);
+wall9.shapeColor="brown";
+
+
+var wall10 = createSprite(320,325,35,5);
+wall10.shapeColor="brown";
+
+var wall11 = createSprite(340,344,5,66);
+wall11.shapeColor="brown";
+
+
+var wall12 = createSprite(318,310,100,5);
+wall12.shapeColor="brown";
+
+
+var wall13 = createSprite(185,353,60,5);
+wall13.shapeColor="brown";
+
+var wall14 = createSprite(155,340,5,30);
+wall14.shapeColor="brown";
+
+var wall15 = createSprite(213,335,5,35);
+wall15.shapeColor="brown";
+
+var wall16= createSprite(225,316,30,5);
+wall16.shapeColor="brown";
+
+
+
+var wall17 = createSprite(25,345,40,5);
+wall17.shapeColor="brown";
+
+var wall18 = createSprite(25,298,5,100);
+wall18.shapeColor="brown";
+
+var wall19 = createSprite(45,303,80,5);
+wall19.shapeColor="brown";
+
+var wall20 = createSprite(85,291,5,30);
+wall20.shapeColor="brown";
+
+var wall21 = createSprite(5,170,150,5);
+wall21.shapeColor="brown";
+
+var wall22 = createSprite(57,190,5,40);
+wall22.shapeColor="brown";
+
+var wall23 = createSprite(55,209,80,5);
+wall23.shapeColor="brown";
+
+var wall24 = createSprite(15,240,5,60);
+wall24.shapeColor="brown";
+
+var wall25 = createSprite(92,240,5,60);
+wall25.shapeColor="brown";
+
+var wall26 = createSprite(70,276,30,5);
+wall26.shapeColor="brown";
+
+
+var wall27 = createSprite(23,150,5,40);
+wall27.shapeColor="brown";
+
+var wall28 = createSprite(20,130,90,5);
+wall28.shapeColor="brown";
+
+var wall29 = createSprite(62,115,5,30);
+wall29.shapeColor="brown";
+
+var wall30 = createSprite(78,100,40,5);
+wall30.shapeColor="brown";
+
+var wall31 = createSprite(25,50,5,50);
+wall31.shapeColor="brown";
+
+var wall32 = createSprite(190,25,330,5);
+wall32.shapeColor="brown";
+
+var wall33 = createSprite(55,71,60,5);
+wall33.shapeColor="brown";
+
+var wall34 = createSprite(83,60,5,30);
+wall34.shapeColor="brown";
+
+var wall35 = createSprite(110,46,50,5);
+wall35.shapeColor="brown";
+
+var wall36 = createSprite(134,105,5,120);
+wall36.shapeColor="brown";
+
+var wall37 = createSprite(175,98,90,5);
+wall37.shapeColor="brown";
+
+var wall38 = createSprite(181,75,5,50);
+wall38.shapeColor="brown";
+
+var wall39 = createSprite(220,89,5,20);
+wall39.shapeColor="brown";
+
+var wall40 = createSprite(244,99,5,150);
+wall40.shapeColor="brown";
+
+var wall41 = createSprite(270,100,60,5);
+wall41.shapeColor="brown";
+
+var wall42 = createSprite(298,123,5,50);
+wall42.shapeColor="brown";
+
+var wall43 = createSprite(310,145,20,5);
+wall43.shapeColor="brown";
+
+var wall44 = createSprite(318,160,5,30);
+wall44.shapeColor="brown";
+
+var wall45 = createSprite(258,170,30,5);
+wall45.shapeColor="brown";
+
+var wall46 = createSprite(270,180,5,20);
+wall46.shapeColor="brown";
+
+var wall47 = createSprite(245,190,50,5);
+wall47.shapeColor="brown";
+
+var wall48 = createSprite(220,178,5,30);
+wall48.shapeColor="brown";
+
+var wall49 = createSprite(270,100,50,5);
+wall49.shapeColor="brown";
+
+var wall50 = createSprite(312,40,5,30);
+wall50.shapeColor="brown";
+
+var wall51 = createSprite(310,55,60,5);
+wall51.shapeColor="brown";
+
+var wall52= createSprite(270,100,20,5);
+wall52.shapeColor="brown";
+
+var wall53 = createSprite(340,48,5,20);
+wall53.shapeColor="brown";
+
+var wall54 = createSprite(280,48,5,20);
+wall54.shapeColor="brown";
+
+var wall55 = createSprite(120,330,30,5);
+wall55.shapeColor="brown";
+
+var wall57 = createSprite(120,275,5,110);
+wall57.shapeColor="brown";
+
+var wall58 = createSprite(150,218,60,5);
+wall58.shapeColor="brown";
+
+var wall59 = createSprite(180,160,5,60);
+wall59.shapeColor="brown";
+
+var wall60 = createSprite(371,170,5,200);
+wall60.shapeColor="brown";
+
+var wall61 = createSprite(280,266,183,5);
+wall61.shapeColor="brown";
+
+var wall62 = createSprite(355,14,5,26);
+wall62.shapeColor="brown";
+
+var wall63 = createSprite(150,235,5,40);
+wall63.shapeColor="brown";
+
+var wall64 = createSprite(180,190,5,60);
+wall64.shapeColor="brown";
+
+var wall65 = createSprite(168,253,40,5);
+wall65.shapeColor="brown";
+
+var wall66 = createSprite(186,265,5,20);
+wall66.shapeColor="brown";
+
+if (thief.isTouching(edges)){
+  thief.x=20;
+  thief.y=380;
+}
+
+  wallGroup.add(wall1);
+  wallGroup.add(wall2);
+  wallGroup.add(wall3);
+  wallGroup.add(wall4);
+  wallGroup.add(wall5);
+  wallGroup.add(wall6);
+  wallGroup.add(wall7);
+  wallGroup.add(wall8);
+  wallGroup.add(wall9);
+  wallGroup.add(wall10);
+  wallGroup.add(wall11);
+  wallGroup.add(wall12);
+  wallGroup.add(wall13);
+  wallGroup.add(wall14);
+  wallGroup.add(wall15);
+  wallGroup.add(wall16);
+  wallGroup.add(wall17);
+  wallGroup.add(wall18);
+  wallGroup.add(wall19);
+  wallGroup.add(wall20);
+  wallGroup.add(wall21);
+  wallGroup.add(wall22);
+  wallGroup.add(wall23);
+  wallGroup.add(wall24);
+  wallGroup.add(wall25);
+  wallGroup.add(wall26);
+  wallGroup.add(wall27);
+  wallGroup.add(wall28);
+  wallGroup.add(wall29);
+  wallGroup.add(wall30);
+  wallGroup.add(wall31);
+  wallGroup.add(wall32);
+  wallGroup.add(wall33);
+  wallGroup.add(wall34);
+  wallGroup.add(wall35);
+  wallGroup.add(wall36);
+  wallGroup.add(wall37);
+  wallGroup.add(wall38);
+  wallGroup.add(wall39);
+  wallGroup.add(wall40);
+  wallGroup.add(wall41);
+  wallGroup.add(wall42);
+  wallGroup.add(wall43);
+  wallGroup.add(wall44);
+  wallGroup.add(wall45);
+  wallGroup.add(wall46);
+  wallGroup.add(wall47);
+  wallGroup.add(wall48);
+  wallGroup.add(wall49);
+  wallGroup.add(wall50);
+  wallGroup.add(wall51);
+  wallGroup.add(wall52);
+  wallGroup.add(wall53);
+  wallGroup.add(wall54);
+  wallGroup.add(wall55);
+  wallGroup.add(wall57);
+  wallGroup.add(wall58);
+  wallGroup.add(wall59);
+  wallGroup.add(wall60);
+  wallGroup.add(wall61);
+  wallGroup.add(wall62);
+  wallGroup.add(wall63);
+  wallGroup.add(wall64);
+  wallGroup.add(wall65);
+  wallGroup.add(wall66);
+  
+  if(thief.isTouching(wall1)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall2)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall3)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall4)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall5)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall6)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall7)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall8)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall9)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall10)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall11)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall12)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall13)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall14)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall15)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall16)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall17)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall18)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall19)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall20)){
+  thief.x=20;
+  thief.y=380;
+ }
+  if(thief.isTouching(wall21)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall22)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall23)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall24)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall25)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall26)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall27)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall28)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall29)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall30)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall31)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall32)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall33)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall34)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall35)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall36)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall37)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall38)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall39)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall40)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall41)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall42)){
+  thief.x=25;
+  thief.y=12;
+ }
+ if(thief.isTouching(wall43)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall44)){
+  thief.x=20;
+  thief.y=380;
+ }
+ if(thief.isTouching(wall45)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall45)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall46)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall47)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall48)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall49)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall50)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall51)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall52)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall53)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall54)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall55)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ 
+ if(thief.isTouching(wall57)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall58)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall59)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall60)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall61)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall62)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall63)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall64)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall65)){
+  thief.x=20;
+  thief.y=380;
+ }
+ 
+ if(thief.isTouching(wall66)){
+  thief.x=20;
+  thief.y=380;
+ }
+  
+}
+  
+  
+/*if (thief.isTouching(wall1)||
+thief.isTouching(wall2)||
+thief.isTouching(wall3)||
+thief.isTouching(wall4)||
+thief.isTouching(wall5)||
+thief.isTouching(wall6)||
+thief.isTouching(wall7)||
+thief.isTouching(wall8)||
+thief.isTouching(wall9)||
+thief.isTouching(wall10)||
+thief.isTouching(wall11)||
+thief.isTouching(wall12)||
+thief.isTouching(wall13)||
+thief.isTouching(wall14)||
+thief.isTouching(wall15)||
+thief.isTouching(wall16)||
+thief.isTouching(wall17)||
+thief.isTouching(wall18)||
+thief.isTouching(wall19)||
+thief.isTouching(wall20)||
+thief.isTouching(wall19)||
+thief.isTouching(wall20)||
+thief.isTouching(wall21)||
+thief.isTouching(wall22)||
+thief.isTouching(wall23)||
+thief.isTouching(wall24)||
+thief.isTouching(wall25)||
+thief.isTouching(wall26)||
+thief.isTouching(wall27)||
+thief.isTouching(wall28)||
+thief.isTouching(wall29)||
+thief.isTouching(wall30)||
+thief.isTouching(wall31)||
+thief.isTouching(wall32)||
+thief.isTouching(wall33)||
+thief.isTouching(wall34)||
+thief.isTouching(wall36)||
+thief.isTouching(wall37)||
+thief.isTouching(wall38)||
+thief.isTouching(wall39)||
+thief.isTouching(wall40)||
+thief.isTouching(wall41)||
+thief.isTouching(wall42)||
+thief.isTouching(wall43)||
+thief.isTouching(wall44)||
+thief.isTouching(wall45)||
+thief.isTouching(wall46)||
+thief.isTouching(wall47)||
+thief.isTouching(wall48)||
+thief.isTouching(wall49)||
+thief.isTouching(wall50)||
+thief.isTouching(wall51)||
+thief.isTouching(wall52)||
+thief.isTouching(wall53)||
+thief.isTouching(wall54)||
+thief.isTouching(wall55)||
+thief.isTouching(wall57)||
+thief.isTouching(wall58)||
+thief.isTouching(wall59)||
+thief.isTouching(wall60)||
+thief.isTouching(wall61)||
+thief.isTouching(wall62)||
+thief.isTouching(wall63)||
+thief.isTouching(wall64)||
+thief.isTouching(wall65)||
+){
+thief.x=20;
+thief.y=380;
+}*/
+
+
+
